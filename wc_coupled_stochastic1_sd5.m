@@ -3,8 +3,8 @@ function [signals] = wc_coupled_stochastic1_sd5(G,D,time,dt,c5,stim_P,sigma,res,
 
 
 %% Equation and simulation parameters: 
-N = size(G,2);                      % --- Number of brain areas (oscillators)
-noise_var = sigma;                % --- varaiance of noise (gaussian)to be added to the oscillators
+N = size(G,2);                      % --- Number of brain areas
+noise_var = sigma;                % --- Noise amplitude
 
 
 
@@ -15,8 +15,7 @@ initIstate = 0.0*randn(1,N)+0.1;    % --- size 1xN, gives the initial states of 
 
 % Model parameters 
 tau = 8;            % --- the excitatory time constant in ms
-r_e = 1;            % --- the excitatory refractory period
-r_i = 1;            % --- the inhibitory refractory period
+
 c1 =  16;           % --- parameter that defines the self-coupling of the
                     %     excitatory population
 c2 = 12;            % --- parameter that defines the coupling of the
@@ -67,7 +66,7 @@ istate(1,:) = initIstate;
 
 %% Setting up stimulation matrix
 
-%Excitatory (P)
+%Excitatory stimulatioin (P)
 P = zeros(1,N);          
 P_matrix=repmat(P,T,1);  %T*N
 num_stim=size(stim_P);
@@ -86,8 +85,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Main Loop: Simulating coupled and stimulated WC oscillators 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% rng default
-% rng(0,'twister')
+
 for t= 2:T
     %creating noise that is fed to the excitatory and inhibitory populations
     noise_e=noise_var * randn(rs,1,N);
@@ -118,11 +116,11 @@ for t= 2:T
     %% Calculating the states using Euler-Maruyama method 
 
     estate(t,:) = estate(t-1,:) + dt .* (1/tau) .* (- estate(t-1, :) + ...
-                (Smax_e-r_e.*estate(t-1,:)).*sigmoidal_wc72(c1.*estate(t-1,:)-c2.*istate(t-1,:)+c5.*c_in_e+P_matrix(t,:), sig_params_e))...
+                (Smax_e-estate(t-1,:)).*sigmoidal_wc72(c1.*estate(t-1,:)-c2.*istate(t-1,:)+c5.*c_in_e+P_matrix(t,:), sig_params_e))...
                 + ((1/tau).*dt^0.5.*noise_e);
 
     istate(t,:) = istate(t-1,:) + dt .* (1/tau) .* (- istate(t-1, :)+ ...
-                (Smax_i-r_i.*istate(t-1,:)).*sigmoidal_wc72(c3.*estate(t-1,:)-c4.*istate(t-1,:), sig_params_i))... %%+c6.*c_in_i
+                (Smax_i-istate(t-1,:)).*sigmoidal_wc72(c3.*estate(t-1,:)-c4.*istate(t-1,:), sig_params_i))... %%+c6.*c_in_i
                 + ((1/tau).*dt^0.5.*noise_i);
 
 end
